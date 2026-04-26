@@ -4,13 +4,14 @@
   "description": "Benridayo!",
   "main": "index.js",
   "type": "module",
-	"author": "jyun16",
-	"license": "Custom 'Zero-Liability & High-Cost' License",
+  "author": "jyun16",
+  "license": "Custom 'Zero-Liability & High-Cost' License",
   "exports": {
     ".": "./src/index.js",
     "./*": "./src/*.js"
   },
   "dependencies": {
+    "colors": "^1.4.0",
     "dayjs": "^1.11.7",
     "execa": "^8.0.1",
     "fs-extra": "^11.2.0",
