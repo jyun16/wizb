@@ -4,8 +4,12 @@
   "description": "Benridayo!",
   "main": "index.js",
   "type": "module",
-  "author": "",
-  "license": "MIT",
+	"author": "jyun16",
+	"license": "Custom 'Zero-Liability & High-Cost' License",
+  "exports": {
+    ".": "./src/index.js",
+    "./*": "./src/*.js"
+  },
   "dependencies": {
     "dayjs": "^1.11.7",
     "execa": "^8.0.1",
@@ -15,6 +19,7 @@
     "mysql2": "^3.9.4",
     "sanitize-html": "^2.13.0",
     "terminal-kit": "^3.1.1",
-    "untildify": "^5.0.0"
+    "untildify": "^5.0.0",
+    "wiz": "link:../wiz"
   }
 }
