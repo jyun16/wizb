@@ -39,6 +39,7 @@ const colorMap = {
 	W: 'white',
 }
 
+export function pp(...args) { p(...args) }
 export function p(...args) {
 	const a = []
 	for (let t of args) {
@@ -90,4 +91,5 @@ export async function shell(cmd)	{
 }
 
 if (isMain(import.meta.url)) {
+	pp('^GHOGE', '^BFUGA')
 }
