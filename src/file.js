@@ -1,7 +1,8 @@
 import fs from 'fs'
 import { resolve } from 'path'
 import fse from 'fs-extra'
-import { cl, isMain, caller, escape4regexp, wildMatch, tabCount, dumpJSObj } from './index.js'
+import { escape4regexp, wildMatch, tabCount, objDumpJS } from 'wiz'
+import { cl, isMain, caller } from './index.js'
 import pathm from 'path'
 
 const absolute = path => resolve(path)

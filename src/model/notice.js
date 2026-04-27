@@ -1,4 +1,3 @@
-import { cl } from '../index.js'
 import Model from '../model.js'
 
 class Self extends Model {

@@ -1,4 +1,5 @@
-import { cl, isMain, isString, clone, split, merge, concat } from './index.js'
+import { isString, deepClone, split, objMerge, arrayConcat } from 'wiz'
+import { isMain } from './index.js'
 import Query from './db/query.js'
 import * as SQL from './db/sql.js'
 
@@ -26,11 +27,11 @@ class Self {
 	}
 	where(w) {
 		if (this.logicalDelete && !w['-force']) {
-			w = clone(w)
+			w = deepClone(w)
 			w.deleted = [ 'isNull' ]
 		}
 		if (this.join) {
-			w = clone(w)
+			w = deepClone(w)
 			w['-join'] = this.join
 		}
 		return w
@@ -41,7 +42,7 @@ class Self {
 	_count(w={}, fields='*') {
 		const q = new Query()
 		w = this.where(w)
-		q.count(this.selfName(), clone(w), fields)
+		q.count(this.selfName(), deepClone(w), fields)
 		return q
 	}
 	async count(w={}, fields='*') {
@@ -84,7 +85,7 @@ class Self {
 	}
 	async selectPrune(w={}, fields='*', filter=[], asArray=false) {
 		if (isString(filter)) { filter = split(filter) }
-		return this.select(w, fields, concat(filter, this.ignoreFields()), asArray)
+		return this.select(w, fields, arrayConcat(filter, this.ignoreFields()), asArray)
 	}
 	async selectPruneAsArray(w={}, fields='*', filter=[]) {
 		return this.selectPrune(w, fields, filter, true)
@@ -106,7 +107,7 @@ class Self {
 	}
 	async onePrune(w, fields='*', filter=[]) {
 		if (isString(filter)) { filter = split(filter) }
-		return this.one(w, fields, concat(filter, this.ignoreFields()))
+		return this.one(w, fields, arrayConcat(filter, this.ignoreFields()))
 	}
 	async get(id, filter=[]) {
 		let w = { [`${this.selfName()}.id`]: id }
@@ -117,7 +118,7 @@ class Self {
 	}
 	async getPrune(id, filter=[]) {
 		if (isString(filter)) { filter = split(filter) }
-		return this.get(id, concat(filter, this.ignoreFields()))
+		return this.get(id, arrayConcat(filter, this.ignoreFields()))
 	}
 	async take(id, fields) {
 		return this.one({ id }, fields)
@@ -220,7 +221,7 @@ class Self {
 		const maxPage = Math.ceil(count / limit) || 1
 		let curPage = page || 1
 		if (maxPage < curPage) { curPage = maxPage }
-		w = merge(w, {
+		w = objMerge(w, {
 			'-offset': (curPage - 1) * limit,
 			'-limit': limit,
 		})

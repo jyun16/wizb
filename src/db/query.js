@@ -1,4 +1,5 @@
-import { cl, isMain, isString, isArray, isMap, isObject, array2map, split } from '../index.js'
+import { isString, isArray, isMap, isObject, array2obj, split } from 'wiz'
+import { isMain } from '../index.js'
 import Where from './where.js'
 import * as SQL from './sql.js'
 
@@ -153,7 +154,7 @@ class Self {
 		let [ q, v ] = this.insert(table, data)
 		q += ' ON DUPLICATE KEY UPDATE'
 		if (isString(primaryKey)) { primaryKey = split(primaryKey) }
-		primaryKey = array2map(primaryKey)
+		primaryKey = array2obj(primaryKey)
 		const dupVals = []
 		for (const k of Object.keys(data)) {
 			if (k in primaryKey) { continue }

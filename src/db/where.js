@@ -1,4 +1,5 @@
-import { dd, isMain, isArray, isObject, split } from '../index.js'
+import { isArray, isObject, split } from 'wiz'
+import { isMain } from '../index.js'
 import * as SQL from './sql.js'
 
 const _f = (field) => {

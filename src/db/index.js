@@ -1,10 +1,11 @@
 import util from 'util'
 import mysql from 'mysql2'
-import { cl, dd, isMain, merge } from '../index.js'
+import { objMerge } from 'wiz'
+import { isMain } from '../index.js'
 
 class DB {
 	constructor(conf) {
-		conf = merge({
+		conf = objMerge({
 			host: 'localhost',
 			port: 3306,
 			user: 'root',
@@ -70,7 +71,7 @@ if (isMain(import.meta.url)) {
 //      const rows = await db.executeAsArray('SELECT * FROM room_log', [])
 //      const rows = await db.conn.execute({ sql: 'SELECT * FROM room_log', value: [], rowsAsArray: true })
 			for (const row of rows) {
-				cl(row)
+				console.log(row)
 			}
 			db.close()
 		}

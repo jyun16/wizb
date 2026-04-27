@@ -1,4 +1,4 @@
-import { cl, isMain } from '../index.js'
+import { isMain } from '../index.js'
 
 export function	escape(v) {
 	v = v.toString()

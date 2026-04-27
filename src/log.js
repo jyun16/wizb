@@ -1,13 +1,14 @@
 import untildify from 'untildify'
 import { appendFileSync } from 'fs'
 import { format } from 'util'
-import { p, isMain, uc, merge, now } from './index.js'
+import { uc, objMerge, now } from 'wiz'
+import { p, isMain } from './index.js'
 
 const LEVELS = [ 'debug', 'info', 'warn', 'error', 'fatal' ]
 
 class Self {
 	constructor(conf) {
-		conf = merge({
+		conf = objMerge({
 			level: 'error',
 			label: true,
 			time: true,
