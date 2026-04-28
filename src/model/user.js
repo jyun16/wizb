@@ -3,8 +3,8 @@ import { isMain } from '../index.js'
 import Model from '../model.js'
 
 class Self extends Model {
-	constructor(conn, table) {
-		super(conn, table)
+	constructor(db, table) {
+		super(db, table)
 		this.emailField = true
 		this.logicalDelete = true
 	}

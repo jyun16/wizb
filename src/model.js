@@ -4,20 +4,20 @@ import Query from './db/query.js'
 import * as SQL from './db/sql.js'
 
 class Self {
-	constructor(conn, table) {
-		this.conn = conn
+	constructor(db, table) {
+		this.db = db
 		this.table = table
 		this.alias = ''
 		this.logicalDelete = false
 		this.join = null
 	}
-	async begin() { await this.conn.begin() }
-	async commit() { await this.conn.commit() }
-	async rollback() { await this.conn.rollback() }
-	async end() { await this.conn.end() }
-	async query(sql, value) { return this.conn.query(sql, value) }
-	async execute(sql, value) { return this.conn.execute(sql, value) }
-	async executeAsArray(sql, value) { return this.conn.executeAsArray(sql, value) }
+	async begin() { await this.db.begin() }
+	async commit() { await this.db.commit() }
+	async rollback() { await this.db.rollback() }
+	async end() { await this.db.end() }
+	async query(sql, value) { return this.db.query(sql, value) }
+	async execute(sql, value) { return this.db.execute(sql, value) }
+	async executeAsArray(sql, value) { return this.db.executeAsArray(sql, value) }
 	async exists(w={}) {
 		w = this.where(w)
 		return await this.count(w) > 0
