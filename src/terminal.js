@@ -1,11 +1,12 @@
 import termkit from 'terminal-kit'
 import inquirer from 'inquirer'
-import { cl, isMain, isString, merge } from './index.js'
-import validation from './validation.js'
-import Validator from './validator.js'
+import validation from 'wiz/validation'
+import Validator from 'wiz/validator'
+import { isString, objMerge } from 'wiz'
+import { cl, isMain } from 'wizb'
 
 export function table(data, opts = {}) {
-	opts = merge({
+	opts = objMerge({
     hasBorder: true ,
     contentHasMarkup: true ,
     borderChars: 'lightRounded' ,
