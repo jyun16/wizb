@@ -100,9 +100,7 @@ class Self {
 		w = this.where(w)
 		const row = await this.select(w, fields)
 		const ret = row[0]
-		if (ret) {
-			for (const f of filter) {delete ret[f] }
-		}
+		if (ret) filter.forEach(f => delete ret[f])
 		return ret;
 	}
 	async onePrune(w, fields='*', filter=[]) {
@@ -113,7 +111,7 @@ class Self {
 		let w = { [`${this.selfName()}.id`]: id }
 		w = this.where(w)
 		const ret = await this.one(w)
-		if (ret) { for (const f of filter) { delete ret[f] } }
+		if (ret) filter.forEach(f => delete ret[f])
 		return ret;
 	}
 	async getPrune(id, filter=[]) {
@@ -121,7 +119,7 @@ class Self {
 		return this.get(id, arrayConcat(filter, this.ignoreFields()))
 	}
 	async take(id, fields) {
-		return this.one({ id }, fields)
+		return this.one({ [`${this.selfName()}.id`]: id }, fields)
 	}
 	async value(field, w={}) {
 		const row = await this.one(w, field)
@@ -202,7 +200,7 @@ class Self {
 	}
 	async findPage(listWhere, w) {
 		const q = new Query()
-		listWhere = clone(listWhere)
+		listWhere = deepClone(listWhere)
 		if (this.logicalDelete && !listWhere['-force']) {
 			listWhere['deleted'] = [ 'isNull' ]
 		}
@@ -217,7 +215,7 @@ class Self {
 		return this.get(id)
 	}
 	pagerData(limit, count, page, w) {
-		w = clone(w)
+		w = deepClone(w)
 		const maxPage = Math.ceil(count / limit) || 1
 		let curPage = page || 1
 		if (maxPage < curPage) { curPage = maxPage }
