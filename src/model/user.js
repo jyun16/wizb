@@ -1,4 +1,4 @@
-import { isEmpty, deepClone, objSet, hash, json } from 'wiz'
+import { isEmpty, deepClone, objSet, hash, json, parseJSON } from 'wiz'
 import { isMain } from '../index.js'
 import Model from '../model.js'
 
@@ -10,6 +10,13 @@ class Self extends Model {
 	}
 	ignoreFields() {
 		return [ 'password' ].concat(super.ignoreFields())
+	}
+	async one(w) {
+		const ret = await super.one(w)
+		if (ret) {
+			ret.stash = parseJSON(ret.stash)
+		}
+		return ret
 	}
 	async insert(d) {
 		d = deepClone(d)
