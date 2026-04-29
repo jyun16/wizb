@@ -1,5 +1,6 @@
 import colors from 'colors'
 import util from 'util'
+import { isArray, isObject } from 'wiz'
 import { fileURLToPath } from 'url'
 import childProcess from 'child_process'
 import { execa } from 'execa'
