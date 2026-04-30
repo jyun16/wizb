@@ -54,7 +54,7 @@ class Self {
 		const q = this._count(w, fields)
 		return SQL.bind(q.query, q.values)
 	}
-	_select(w={}, fields='*', filter=[]) {
+	_select(w={}, fields='*') {
 		const q = new Query()
 		w = this.where(w)
 		if (this.appendField && fields == '*') {
@@ -64,6 +64,7 @@ class Self {
 		return q
 	}
 	async select(w={}, fields='*', filter=[], asArray=false) {
+		if (isString(filter)) { filter = split(filter) }
 		const q = this._select(w, fields, filter)
 		const ret = asArray ? await this.executeAsArray(q.query, q.values) : await this.execute(q.query, q.values)
 		if (filter.length) {
@@ -84,7 +85,6 @@ class Self {
 		return SQL.bind(q.query, q.values)
 	}
 	async selectPrune(w={}, fields='*', filter=[], asArray=false) {
-		if (isString(filter)) { filter = split(filter) }
 		return this.select(w, fields, arrayConcat(filter, this.ignoreFields()), asArray)
 	}
 	async selectPruneAsArray(w={}, fields='*', filter=[]) {
