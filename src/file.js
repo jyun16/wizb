@@ -1,7 +1,6 @@
-import fs from 'fs/promises'
+import fs from 'fs-extra'
 import os from 'os'
 import { resolve, join as pathJoin } from 'path'
-import fse from 'fs-extra'
 import { escape4regexp, wildMatch, tabCount, objDumpJS } from 'wiz'
 import { isMain, caller } from './index.js'
 import pathm from 'path'
@@ -186,12 +185,12 @@ export function cp(src, dest, opts = {}) {
 		}
 	}
 	else {
-		fse.copySync(src, dest, { overwrite: true })
+		fs.copySync(src, dest, { overwrite: true })
 	}
 }
 
 export function mv(src, dest) {
-	fse.moveSync(src, dest, { overwrite: true })
+	fs.moveSync(src, dest, { overwrite: true })
 }
 
 export function rm(path) {
