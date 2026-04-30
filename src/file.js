@@ -209,6 +209,11 @@ export async function tmpdir(prefix='wizb-') {
 	return await fs.mkdtemp(pathJoin(os.tmpdir(), prefix))
 }
 
+export async function tmpfile(data, dir) {
+	if (!dir) dir = await tmpdir()
+	return pathJoin(dir, `${Math.random().toString(36).slice(2)}`)
+}
+
 // unit
 // year or y, momth or M, day or d
 // hour or h, minute or m, second or s
@@ -265,6 +270,8 @@ if (isMain(import.meta.url)) {
 		const Test = (await import('./test.js')).default
 		const { dd } = (await import('wiz'))
 		const t = new Test()
+		dd(await tmpfile('HOGEHOGE', '/tmp'))
+
 		// dd(await tmpdir())
 		// cp('hoge', 'xxx', {
 		// 	replace: [
