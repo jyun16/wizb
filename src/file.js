@@ -1,8 +1,9 @@
-import fs from 'fs'
-import { resolve } from 'path'
+import fs from 'fs/promises'
+import os from 'os'
+import { resolve, join as pathJoin } from 'path'
 import fse from 'fs-extra'
 import { escape4regexp, wildMatch, tabCount, objDumpJS } from 'wiz'
-import { cl, isMain, caller } from './index.js'
+import { isMain, caller } from './index.js'
 import pathm from 'path'
 
 const absolute = path => resolve(path)
@@ -205,6 +206,10 @@ export function touch(path, date = undefined) {
 	fs.utimesSync(path, dt, dt)
 }
 
+export async function tmpdir(prefix='wizb-') {
+	return await fs.mkdtemp(pathJoin(os.tmpdir(), prefix))
+}
+
 // unit
 // year or y, momth or M, day or d
 // hour or h, minute or m, second or s
@@ -259,15 +264,17 @@ export function writeObj2JS(path, target, residue, obj) {
 if (isMain(import.meta.url)) {
 	(async () => {
 		const Test = (await import('./test.js')).default
+		const { dd } = (await import('wiz'))
 		const t = new Test()
-		cp('hoge', 'xxx', {
-			replace: [
-				'fuga/zzz',
-				'FUGA/ZZZ',
-			],
-			replacePath: true,
-		})
-		cl(lsR('xxx', { fileOnly: false, exclude: [ 'node_modules', 'node_modules/*', 'logs/*' ] }))
+		// dd(await tmpdir())
+		// cp('hoge', 'xxx', {
+		// 	replace: [
+		// 		'fuga/zzz',
+		// 		'FUGA/ZZZ',
+		// 	],
+		// 	replacePath: true,
+		// })
+		// cl(lsR('xxx', { fileOnly: false, exclude: [ 'node_modules', 'node_modules/*', 'logs/*' ] }))
 //    cl(lsR('~/hoge', { fileOnly: false, exclude: [ 'node_modules', 'node_modules/*', 'logs/*' ] }))
 //    cl(ls('./'))
 //    cl(ls('./', { include: [ '*.js' ] }))
