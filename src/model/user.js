@@ -11,11 +11,14 @@ class Self extends Model {
 	ignoreFields() {
 		return [ 'password' ].concat(super.ignoreFields())
 	}
+	async select(w={}, fields='*', filter=[], asArray=false) {
+		const ret = await super.select(w, fields, filter, asArray)
+		if (ret) { ret.forEach(v => v.stash = parseJSON(v.stash) || '{}') }
+		return ret
+	}
 	async one(w) {
 		const ret = await super.one(w)
-		if (ret) {
-			ret.stash = parseJSON(ret.stash)
-		}
+		if (ret) { ret.stash = parseJSON(ret.stash || '{}') }
 		return ret
 	}
 	async insert(d) {
