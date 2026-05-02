@@ -224,7 +224,6 @@ if (isMain(import.meta.url)) {
 		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
 		t.eq([ '%HOGE%' ], qv[1])
 
-		return
 		qv = sql.select('test AS t', {
 			't.name': [ 'like', 'HOGE' ],
 			'-join': [

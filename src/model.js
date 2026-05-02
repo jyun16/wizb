@@ -7,10 +7,13 @@ class Self {
 	constructor(db, table) {
 		this.db = db
 		this.table = table
-		this.alias = ''
 		this.logicalDelete = false
-		this.join = null
+		this._alias = ''
+		this._join = null
 	}
+async 
+	async alias(_alias) { this._alias = _alias }
+	async join(_join) { this._join = _join }
 	async begin() { await this.db.begin() }
 	async commit() { await this.db.commit() }
 	async rollback() { await this.db.rollback() }
@@ -26,18 +29,20 @@ class Self {
 		return (this.logicalDelete ? [ 'deleted' ] : []).concat([ 'created', 'modified' ])
 	}
 	where(w) {
+		w = deepClone(w)
 		if (this.logicalDelete && !w['-force']) {
-			w = deepClone(w)
 			w.deleted = [ 'isNull' ]
 		}
-		if (this.join) {
-			w = deepClone(w)
-			w['-join'] = this.join
+		if (this._join) {
+			w['-join'] = this._join
+		}
+		if (this._alias) {
+			w['-alias'] = this._alias
 		}
 		return w
 	}
 	selfName() {
-		return this.alias ? `${this.table} AS ${this.alias}` : this.table
+		return this.table
 	}
 	_count(w={}, fields='*') {
 		const q = new Query()
@@ -238,6 +243,9 @@ if (isMain(import.meta.url)) {
 		const DB = (await import('./db/index.js')).default
 		const db = await DB({ user: 'jn', database: 'jqcs' })
 		const m = new Self(db, 'crud')
+		m.join({
+
+		})
 		dd(await m.select({
 			'-alias': 'c'
 		}, 'id, text'))
