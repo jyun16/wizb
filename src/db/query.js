@@ -27,14 +27,19 @@ class Self {
 		if (typeof fields == 'string') { fields = split(fields) }
 		return SQL.escapes(fields).map(f => {
 			if (f.indexOf('->') > 0) { return f.replace(/\\'/g, `'`) }
-			const m = /(.+)\.([^\s]+)(.+)?/.exec(f)
-			if (m) {
-				if (m[3]) { return `${m[1]}.\`${m[2]}\`${m[3]}` }
-				if (m[2] != '*') { return `${m[1]}.\`${m[2]}\`` }
-				return f
+			let asStr = ''
+			const asMatch = f.match(/^(.*?)\s+AS\s+(.+)$/i)
+			if (asMatch) {
+				f = asMatch[1]
+				asStr = ` AS \`${asMatch[2].replace(/`/g, '')}\``
 			}
-			if (/^:/.test(f)) { return f.replace(/^:/, '') }
-			return alias ? `${alias}.\`${f}\`` : `\`${f}\``
+			const m = /(.+)\.(.+)/.exec(f)
+			if (m) {
+				if (m[2] == '*') { return f + asStr }
+				return `${m[1]}.\`${m[2]}\`${asStr}`
+			}
+			if (/^:/.test(f)) { return f.replace(/^:/, '') + asStr }
+			return alias ? `${alias}.\`${f}\`${asStr}` : `\`${f}\`${asStr}`
 		}).join(',')
 	}
 	_where(where = {}, mode = 'select') {
@@ -211,8 +216,8 @@ if (isMain(import.meta.url)) {
 				'user': [ 'u', 'u.id', 'user_id' ],
 				'<log': [ 'l', 'l.user_id', 'user_id' ],
 			},
-		}, 'radio, select. u.name')
-		t.eq("SELECT c.`radio`,select. u.`name` FROM crud AS c INNER JOIN `user` u ON u.`id` = c.`user_id` LEFT JOIN `log` l ON l.`user_id` = c.`user_id`", qv)
+		}, 'radio, select. u.name AS user_name')
+		t.eq("SELECT c.`radio`,select. u.`name` AS `user_name` FROM crud AS c INNER JOIN `user` u ON u.`id` = c.`user_id` LEFT JOIN `log` l ON l.`user_id` = c.`user_id`", qv)
 
 		qv = sql.select('test AS t', {
 			't.name': [ 'like', 'HOGE' ],
@@ -221,7 +226,7 @@ if (isMain(import.meta.url)) {
 				'INNER JOIN fuga f ON f.id = t.fuga_id',
 			],
 		}, [ 't.*', 't.hoge', 't.fuga', 'h.name AS hoge_name' ])
-		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
+		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS `hoge_name` FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
 		t.eq([ '%HOGE%' ], qv[1])
 
 		qv = sql.select('test AS t', {
@@ -231,7 +236,7 @@ if (isMain(import.meta.url)) {
 				'INNER JOIN fuga f ON f.id = t.fuga_id',
 			],
 		}, [ 't.*', 't.hoge', 't.fuga', 'h.name AS hoge_name' ])
-		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
+		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS `hoge_name` FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
 		t.eq([ '%HOGE%' ], qv[1])
 
 		qv = sql.count('test', {
@@ -304,7 +309,7 @@ if (isMain(import.meta.url)) {
 		qv = sql.select('test', {
 			hoge: 'HOGE',
 		}, [ ':MAX(priority) AS max_priority' ]);
-		t.eq('SELECT MAX(priority) AS max_priority FROM test WHERE `hoge`=?', qv[0])
+		t.eq('SELECT MAX(priority) AS `max_priority` FROM test WHERE `hoge`=?', qv[0])
 		t.eq([ 'HOGE' ], qv[1])
 
 		qv = sql.findPage('crud', { text: [ 'like', '1' ], '-limit': 5 }, { id: 40 })
