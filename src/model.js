@@ -30,15 +30,9 @@ async
 	}
 	where(w) {
 		w = deepClone(w)
-		if (this.logicalDelete && !w['-force']) {
-			w.deleted = [ 'isNull' ]
-		}
-		if (this._join) {
-			w['-join'] = this._join
-		}
-		if (this._alias) {
-			w['-alias'] = this._alias
-		}
+		if (this.logicalDelete && !w['-force']) w.deleted = [ 'isNull' ]
+		if (this._join) w['-join'] = this._join
+		if (this._alias) w['-alias'] = this._alias
 		return w
 	}
 	selfName() {
@@ -243,12 +237,11 @@ if (isMain(import.meta.url)) {
 		const DB = (await import('./db/index.js')).default
 		const db = await DB({ user: 'jn', database: 'jqcs' })
 		const m = new Self(db, 'crud')
+		m.alias('c')
 		m.join({
-
+			user: [ 'u', 'u.id', 'user_id' ]
 		})
-		dd(await m.select({
-			'-alias': 'c'
-		}, 'id, text'))
+		dd(await m.select({ 'text': [ 'like', 'hoge-1' ]}, 'id, text, u.name'))
 		process.exit()
 	})()
 }
