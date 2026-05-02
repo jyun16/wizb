@@ -303,8 +303,8 @@ export function writeObj2JS(path, target, residue, obj) {
 
 if (isMain(import.meta.url)) {
 	(async () => {
-		const Test = (await import('./test.js')).default
 		const { dd } = (await import('wiz'))
+		const Test = (await import('wiz/test')).default
 		const t = new Test()
 		// dd(lsSync('./', { abs: true, include: [ '*.json' ] }))
 		// dd(await ls('./', { abs: true, include: [ '*.json' ] }))

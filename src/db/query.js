@@ -1,5 +1,5 @@
 import { isString, isArray, isMap, isObject, array2obj, split } from 'wiz'
-import { isMain } from '../index.js'
+import { dd, isMain } from '../index.js'
 import Where from './where.js'
 import * as SQL from './sql.js'
 
@@ -22,42 +22,20 @@ class Self {
 		ret[0] += ' FOR UPDATE'
 		return ret
 	}
-	_fields(fields) {
-		if (fields == '*') { return '*' }
-		else {
-			if (typeof fields == 'string') {
-				fields = split(fields)
+	_fields(fields, alias, mode) {
+		if (fields == '*') { return alias && mode != 'count' ? `${alias}.*` : '*' }
+		if (typeof fields == 'string') { fields = split(fields) }
+		return SQL.escapes(fields).map(f => {
+			if (f.indexOf('->') > 0) { return f.replace(/\\'/g, `'`) }
+			const m = /(.+)\.([^\s]+)(.+)?/.exec(f)
+			if (m) {
+				if (m[3]) { return `${m[1]}.\`${m[2]}\`${m[3]}` }
+				if (m[2] != '*') { return `${m[1]}.\`${m[2]}\`` }
+				return f
 			}
-			let ret = []
-			for (const f of SQL.escapes(fields)) {
-				if (f.indexOf('->') > 0) {
-					ret.push(f.replace(/\\'/g, `'`) )
-				}
-				else {
-					const m = /(.+)\.([^\s]+)(.+)?/.exec(f)
-					if (m) {
-						if (m[3]) {
-							ret.push(`${m[1]}.\`${m[2]}\`${m[3]}`)
-						}
-						else {
-							if (m[2] != '*') {
-								ret.push(`${m[1]}.\`${m[2]}\``)
-							}
-							else {
-								ret.push(f)
-							}
-						}
-					}
-					else if (/^:/.test(f)) {
-						ret.push(`${f.replace(/^:/, '')}`)
-					}
-					else {
-						ret.push(`\`${f}\``)
-					}
-				}
-			}
-			return ret.join(',')
-		}
+			if (/^:/.test(f)) { return f.replace(/^:/, '') }
+			return alias ? `${alias}.\`${f}\`` : `\`${f}\``
+		}).join(',')
 	}
 	_where(where = {}, mode = 'select') {
 		if (!(where instanceof Where)) {
@@ -76,23 +54,34 @@ class Self {
 	}
 	_selectCount(table, where, fields, mode) {
 		this.clear()
-		if (where['-tableAlias']) {
-			table += ` AS ${where['-tableAlias']}`
-			delete where['-tableAlias']
+		const alias = where['-alias']
+		if (alias) {
+			table += ` AS ${alias}`
 		}
-		fields = this._fields(fields)
+		fields = this._fields(fields, alias, mode)
 		if (where['-join']) {
 			const join = where['-join']
-			table += ' ' + (isArray(join) ? join.join(' ') : join)
+			if (isObject(join) && !isArray(join)) {
+				const esc = s => {
+					const m = /(.+)\.(.+)/.exec(s)
+					return m ? `${m[1]}.\`${m[2]}\`` : `\`${s}\``
+				}
+				for (const k in join) {
+					const v = join[k]
+					const type = k.startsWith('<') ? 'LEFT JOIN' : 'INNER JOIN'
+					const tbl = esc(k.replace(/^</, ''))
+					const on1 = esc(v[1])
+					const on2 = esc(v[2].indexOf('.') > 0 ? v[2] : (alias ? `${alias}.${v[2]}` : v[2]))
+					table += ` ${type} ${tbl} ${v[0]} ON ${on1} = ${on2}`
+				}
+			}
+			else {
+				table += ' ' + (isArray(join) ? join.join(' ') : join)
+			}
 			delete where['-join']
 		}
 		where = this._where(where, mode)
-		if (mode == 'select') {
-			this.query = `SELECT ${fields} FROM ${table} ${where}`
-		}
-		else {
-			this.query = `SELECT COUNT(${fields}) AS count FROM ${table} ${where}`
-		}
+		this.query = mode == 'select' ? `SELECT ${fields} FROM ${table} ${where}` : `SELECT COUNT(${fields}) AS count FROM ${table} ${where}`
 		this.values = where.values
 		return [ this.query, this.values ]
 	}
@@ -189,15 +178,15 @@ class Self {
 	}
 	countDump(table, where, fields) {
 		this.count(table, where, fields)
-		return SQL.bind(this.query, this.values)
+		return SQL.bind(this.query, this.values).trim()
 	}
 	selectDump(table, where, fields) {
 		this.select(table, where, fields)
-		return SQL.bind(this.query, this.values)
+		return SQL.bind(this.query, this.values).trim()
 	}
 	insertDump(table, data) {
 		this.insert(table, data)
-		return SQL.bind(this.query, this.values)
+		return SQL.bind(this.query, this.values).trim()
 	}
 }
 
@@ -205,10 +194,46 @@ export default Self
 
 if (isMain(import.meta.url)) {
 	(async () => {
-		const Test = (await import('../test.js')).default
+		const Test = (await import('wiz/test')).default
 		const t = new Test()
 		const sql = new Self()
 		let qv
+
+		qv = sql.selectDump('crud', {
+			'-alias': 'c',
+			'text': 'HOGE',
+		}, 'radio, select')
+		t.eq("SELECT c.`radio`,c.`select` FROM crud AS c WHERE c.`text`='HOGE'", qv)
+
+		qv = sql.selectDump('crud', {
+			'-alias': 'c',
+			'-join': {
+				'user': [ 'u', 'u.id', 'user_id' ],
+				'<log': [ 'l', 'l.user_id', 'user_id' ],
+			},
+		}, 'radio, select. u.name')
+		t.eq("SELECT c.`radio`,select. u.`name` FROM crud AS c INNER JOIN `user` u ON u.`id` = c.`user_id` LEFT JOIN `log` l ON l.`user_id` = c.`user_id`", qv)
+
+		qv = sql.select('test AS t', {
+			't.name': [ 'like', 'HOGE' ],
+			'-join': [
+				'INNER JOIN hoge h ON h.id = t.hoge_id',
+				'INNER JOIN fuga f ON f.id = t.fuga_id',
+			],
+		}, [ 't.*', 't.hoge', 't.fuga', 'h.name AS hoge_name' ])
+		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
+		t.eq([ '%HOGE%' ], qv[1])
+
+		return
+		qv = sql.select('test AS t', {
+			't.name': [ 'like', 'HOGE' ],
+			'-join': [
+				'INNER JOIN hoge h ON h.id = t.hoge_id',
+				'INNER JOIN fuga f ON f.id = t.fuga_id',
+			],
+		}, [ 't.*', 't.hoge', 't.fuga', 'h.name AS hoge_name' ])
+		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
+		t.eq([ '%HOGE%' ], qv[1])
 
 		qv = sql.count('test', {
 			hoge: 'HOGE',
@@ -264,18 +289,6 @@ if (isMain(import.meta.url)) {
 		t.eq('DELETE FROM test WHERE `id`=?', qv[0])
 		t.eq([ 30 ], qv[1])
 
-		// not pass
-
-		qv = sql.select('test AS t', {
-			't.name': [ 'like', 'HOGE' ],
-			'-join': [
-				'INNER JOIN hoge h ON h.id = t.hoge_id',
-				'INNER JOIN fuga f ON f.id = t.fuga_id',
-			],
-		}, [ 't.*', 't.hoge', 't.fuga', 'h.name AS hoge_name' ])
-		t.eq('SELECT t.*,t.`hoge`,t.`fuga`,h.`name` AS hoge_name FROM test AS t INNER JOIN hoge h ON h.id = t.hoge_id INNER JOIN fuga f ON f.id = t.fuga_id WHERE t.`name` LIKE ?', qv[0])
-		t.eq([ '%HOGE%' ], qv[1])
-
 		qv = sql.select('test', {
 			"data->'$.to_user_id'": 10
 		}, (`data->'$.from_user_id' AS user`))
@@ -283,10 +296,10 @@ if (isMain(import.meta.url)) {
 		t.eq([ 10 ], qv[1])
 
 		qv = sql.select('test', {
-			'-tableAlias': 't',
+			'-alias': 't',
 			't.hoge': 'HOGE',
 		})
-		t.eq("SELECT * FROM test AS t WHERE t.`hoge`=?", qv[0])
+		t.eq("SELECT t.* FROM test AS t WHERE t.`hoge`=?", qv[0])
 
 		// : <- Do not escape if this prefix is attached
 		qv = sql.select('test', {

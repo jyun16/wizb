@@ -56,7 +56,7 @@ export function bind(q, v) {
 
 if (isMain(import.meta.url)) {
 	(async () => {
-		const Test = (await import('../test.js')).default
+		const Test = (await import('wiz/test')).default
 		const t = new Test()
 		t.eq('\\"\\n', escape('"\n'))
 		t.eq([ '\\"', '\\n' ], escapes([ '"', '\n' ]))

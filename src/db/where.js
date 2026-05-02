@@ -2,15 +2,6 @@ import { isArray, isObject, split } from 'wiz'
 import { isMain } from '../index.js'
 import * as SQL from './sql.js'
 
-const _f = (field) => {
-  if (field.indexOf('->') > 0) {
-    field = field.replace(/\\'/g, `'`)
-    return field
-  }
-  const m = /(.+)\.(.+)/.exec(field)
-  return m ? `${m[1]}.\`${m[2]}\`` : `\`${field}\``
-}
-
 class Self {
 	constructor(data = {}) {
 		this.data = data
@@ -20,31 +11,38 @@ class Self {
 		return [ this.query, this.values ]
 	}
 	gen(data = {}) {
-		if (data) { this.data = data }
-		const opts = {}
-		data = {}
-		this.values = []
-		if (isArray(this.data)) {
-			data = this.data
-		}
-		else {
-			for (const k in this.data) {
-				const v = this.data[k]
-				if (/^-/.test(k) && ![ '-and', '-or' ].includes(k)) {
-					opts[k] = v
-				}
-				else {
-					data[k] = v
-				}
-			}
-		}
-		const where = this._gen(data)
-		const optsQuery = this.genOpts(opts)
-		let query = where ? 'WHERE ' : ''
-		query += where
-		query += optsQuery
-		this.query = query
-		return [ this.query, this.values ]
+    if (data) { this.data = data }
+    const opts = {}
+    data = {}
+    this.values = []
+    if (isArray(this.data)) {
+      data = this.data
+    }
+    else {
+      for (const k in this.data) {
+        const v = this.data[k]
+        if (/^-/.test(k) && ![ '-and', '-or' ].includes(k)) {
+          opts[k] = v
+        }
+        else {
+          data[k] = v
+        }
+      }
+    }
+    this.alias = opts['-alias']
+    const where = this._gen(data)
+    const optsQuery = this.genOpts(opts)
+    let query = where ? 'WHERE ' : ''
+    query += where
+    query += optsQuery
+    this.query = query
+    return [ this.query, this.values ]
+  }
+	_f(field) {
+		if (field.indexOf('->') > 0) { return field.replace(/\\'/g, `'`) }
+		const m = /(.+)\.(.+)/.exec(field)
+		if (m) { return `${m[1]}.\`${m[2]}\`` }
+		return this.alias ? `${this.alias}.\`${field}\`` : `\`${field}\``
 	}
 	_gen(data, andOr = 'AND', depth = 0) {
 		const ret = []
@@ -86,7 +84,7 @@ class Self {
 				this._gen_ope(ret, k, v)
 			}
 			else {
-				ret.push(`${_f(k)}=?`)
+				ret.push(`${this._f(k)}=?`)
 				this.values.push(v)
 			}
 		}
@@ -94,7 +92,7 @@ class Self {
 	_gen_ope(ret, k, v) {
 		const ope = v.shift()
 		if (/^[!=<>]+$/.test(ope)) {
-			ret.push(`${_f(k)}${ope}?`)
+			ret.push(`${this._f(k)}${ope}?`)
 			this.values.push(v[0])
 		}
 		else if (ope == 'in' || ope == 'notIn') {
@@ -102,22 +100,22 @@ class Self {
 				v = v[0]
 			}
 			const vv = [...Array(v.length).keys()].map(d => '?').join(',')
-			ret.push(`${_f(k)} ${ope == 'in' ? 'IN' : 'NOT IN'} (${vv})`)
+			ret.push(`${this._f(k)} ${ope == 'in' ? 'IN' : 'NOT IN'} (${vv})`)
 			for (const _v of v) {
 				this.values.push(_v)
 			}
 		}
 		else if (ope == 'raw') {
-			ret.push(`${_f(k)}${v[0]}`)
+			ret.push(`${this._f(k)}${v[0]}`)
 		}
 		else if (ope == 'isNull') {
-			ret.push(`${_f(k)} IS NULL`)
+			ret.push(`${this._f(k)} IS NULL`)
 		}
 		else if (ope == 'isNotNull') {
-			ret.push(`${_f(k)} IS NOT NULL`)
+			ret.push(`${this._f(k)} IS NOT NULL`)
 		}
 		else if (ope == 'between') {
-			ret.push(`${_f(k)} BETWEEN ? AND ?`)
+			ret.push(`${this._f(k)} BETWEEN ? AND ?`)
 			this.values = this.values.concat(v)
 		}
 		else if (/match/i.test(ope)) {
@@ -131,7 +129,7 @@ class Self {
 			else if (ope == 'expansionMatch') {
 				mode = ' WITH QUERY EXPANSION'
 			}
-			ret.push(`MATCH(${_f(SQL.escape(k))}) AGAINST(?${mode})`)
+			ret.push(`MATCH(${this._f(SQL.escape(k))}) AGAINST(?${mode})`)
 			this.values = this.values.concat(v)
 		}
 		else {
@@ -141,7 +139,7 @@ class Self {
 				let not , i
 				not = m[0] == 'not' ? ' NOT' : ''
 				i = [ 'i', 'I' ].includes(m[1]) ? ' COLLATE utf8_unicode_ci' : ''
-				ret.push(`${_f(k)}${i}${not} LIKE ?`)
+				ret.push(`${this._f(k)}${i}${not} LIKE ?`)
 				if ([ 'pre', 'Pre' ].includes(m[2])) {
 					v[0] = SQL.escape4like(v[0]) + '%'
 				}
@@ -178,7 +176,7 @@ class Self {
 						desc = true
 						vv = RegExp.$1
 					}
-					return desc ? `${_f(vv)} DESC` : `${_f(vv)}`
+					return desc ? `${this._f(vv)} DESC` : `${this._f(vv)}`
 				})
 				ret += ` ORDER BY ${SQL.escapes(v).join(',')}`
 			}
@@ -208,7 +206,7 @@ export default Self
 
 if (isMain(import.meta.url)) {
 	(async () => {
-		const Test = (await import('../test.js')).default
+		const Test = (await import('wiz/test')).default
 		const t = new Test()
 		const w = new Self({
 			'-and': {

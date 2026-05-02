@@ -234,5 +234,13 @@ export default Self
 
 if (isMain(import.meta.url)) {
 	(async() => {
+		const { dd } = (await import('./index.js'))
+		const DB = (await import('./db/index.js')).default
+		const db = await DB({ user: 'jn', database: 'jqcs' })
+		const m = new Self(db, 'crud')
+		dd(await m.select({
+			'-alias': 'c'
+		}, 'id, text'))
+		process.exit()
 	})()
 }
