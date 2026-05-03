@@ -1,11 +1,11 @@
 import colors from 'colors'
 import util from 'util'
-import { isArray, isObject } from 'wiz'
+import { isArray, isObject, tab2sp, jsObj } from 'wiz'
 import { fileURLToPath } from 'url'
 import childProcess from 'child_process'
 import { execa } from 'execa'
 
-const _dd = v => typeof v	== 'object' ? JSON.stringify(v, null, 2) : v
+const _dd = v => typeof v	== 'object' ? jsObj.dump(v) : v
 function dump(args, depth = 2) {
 	let out = args.map(v => _dd(v)).join(' ')
 	if (out != '') out += ` (${caller(depth)})`
@@ -93,4 +93,5 @@ export async function shell(cmd)	{
 
 if (isMain(import.meta.url)) {
 	pp('^GHOGE', '^BFUGA')
+	dd({ hoge: 'hoge' })
 }
