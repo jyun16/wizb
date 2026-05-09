@@ -236,12 +236,17 @@ if (isMain(import.meta.url)) {
 		const { dd } = (await import('./index.js'))
 		const DB = (await import('./db/index.js')).default
 		const db = await DB({ user: 'jn', database: 'jqcs' })
-		const m = new Self(db, 'crud')
+		const m = new Self(db, 'scrud')
 		m.alias('c')
 		m.join({
 			user: [ 'u', 'u.id', 'user_id' ]
 		})
-		dd(await m.select({ 'text': [ 'like', 'hoge-1' ]}, 'id, text, u.name'))
+		// dd(await m.select({ 'text': [ 'like', 'hoge-1' ]}, 'id, text, u.name'))
+		dd(await m.findPage({
+			'-order': 'id DESC',
+		}, {
+			id: 134
+		}))
 		process.exit()
 	})()
 }

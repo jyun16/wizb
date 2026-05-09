@@ -170,15 +170,25 @@ class Self {
 	}
 	findPage(table, listWhere, where) {
 		let limit = 10
-		if (isObject(listWhere)) {
-			if (listWhere['-limit']) { limit = listWhere['-limit']; delete listWhere['-limit'] }
+		let order = '`id`'
+		if (!(listWhere instanceof Where)) {
+			if (listWhere['-limit']) {
+				limit = listWhere['-limit']
+				delete listWhere['-limit']
+			}
+			delete listWhere['-offset']
+			if (listWhere['-order']) {
+				order = new Where({ '-order': listWhere['-order'] }).toString().replace(' ORDER BY ', '')
+				delete listWhere['-order']
+			}
 			listWhere = new Where(listWhere)
 		}
-		delete listWhere.data['-limit']
-		if (isObject(where)) { where = new Where(where) }
-		const sql = `SELECT CEIL(rnk/${limit}) AS page_number FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS rnk FROM ${table} ${listWhere}) AS sub ${where}`
+		if (!(where instanceof Where)) {
+			where = new Where(where)
+		}
+		const sql = `SELECT CEIL(rnk/${limit}) AS page_number FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY ${order}) AS rnk FROM ${table} ${listWhere}) AS sub ${where}`
 		this.query = sql
-		this.values = listWhere.values.concat(where.values)
+		this.values = [...listWhere.values, ...where.values]
 		return [ this.query, this.values ]
 	}
 	countDump(table, where, fields) {
