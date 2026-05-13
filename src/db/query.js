@@ -323,7 +323,7 @@ if (isMain(import.meta.url)) {
 		t.eq([ 'HOGE' ], qv[1])
 
 		qv = sql.findPage('crud', { text: [ 'like', '1' ], '-limit': 5 }, { id: 40 })
-		t.eq('SELECT CEIL(rnk/5) AS page_number FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS rnk FROM crud WHERE `text` LIKE ?) AS sub WHERE `id`=?', qv[0])
+		t.eq('SELECT CEIL(rnk/5) AS page_number FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY `id`) AS rnk FROM crud WHERE `text` LIKE ?) AS sub WHERE `id`=?', qv[0])
 		t.eq([ '%1%', 40 ], qv[1])
 
 		qv = sql.update('test', {
