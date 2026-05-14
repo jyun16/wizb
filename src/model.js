@@ -95,7 +95,7 @@ async
 	}
 	async one(w={}, fields='*', filter=[]) {
 		if (isString(filter)) { filter = split(filter) }
-		w['-limit'] = [ 0, 1 ]
+		w['-limit'] ||= 1
 		w = this.where(w)
 		const row = await this.select(w, fields)
 		const ret = row[0]
