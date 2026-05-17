@@ -1,4 +1,4 @@
-import { isString, deepClone, split, objMerge, arrayConcat } from 'wiz'
+import { dd, isString, deepClone, split, objMerge, arrayConcat } from 'wiz'
 import { isMain } from './index.js'
 import Query from './db/query.js'
 import * as SQL from './db/sql.js'
@@ -95,7 +95,8 @@ async
 	}
 	async one(w={}, fields='*', filter=[]) {
 		if (isString(filter)) { filter = split(filter) }
-		w['-limit'] ||= 1
+		w['-limit'] = 1
+		delete w['-offset']
 		w = this.where(w)
 		const row = await this.select(w, fields)
 		const ret = row[0]
@@ -237,16 +238,21 @@ if (isMain(import.meta.url)) {
 		const DB = (await import('./db/index.js')).default
 		const db = await DB({ user: 'jn', database: 'jqcs' })
 		const m = new Self(db, 'scrud')
-		m.alias('c')
-		m.join({
-			user: [ 'u', 'u.id', 'user_id' ]
-		})
+		// m.alias('c')
+		// m.join({
+		// 	user: [ 'u', 'u.id', 'user_id' ]
+		// })
 		// dd(await m.select({ 'text': [ 'like', 'hoge-1' ]}, 'id, text, u.name'))
-		dd(await m.findPage({
-			'-order': 'id DESC',
-		}, {
-			id: 134
+		dd(await m.one({
+			'-limit': 1,
+			'-offset': 10,
+			id: '12'
 		}))
+		// dd(await m.findPage({
+		// 	'-order': 'id DESC',
+		// }, {
+		// 	id: 2
+		// }))
 		process.exit()
 	})()
 }
