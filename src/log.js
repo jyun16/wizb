@@ -1,7 +1,7 @@
 import untildify from 'untildify'
 import { appendFileSync } from 'fs'
 import { format } from 'util'
-import { uc, objMerge, now } from 'wiz'
+import { dd, uc, objMerge, now } from 'wiz'
 import { p, isMain } from './index.js'
 
 const LEVELS = [ 'debug', 'info', 'warn', 'error', 'fatal' ]
@@ -26,13 +26,16 @@ class Self {
 	}
 	output(lv, ...msg) {
 		const c = this.conf
+		const last = msg.at(-1)
+		if (last instanceof Error) {
+			if (c.trace) msg[msg.length - 1] = '\n' + last.stack.substring(last.stack.indexOf('\n') + 1)
+			else msg.pop()
+		}
 		msg = (c.label ? `[${lv}] ` : '') + format(...msg)
 		if (c.time) { msg += ' (' + now() + ')' }
 		if (c.stdout) { console.log(msg) }
 		if (c.stderr) { console.error(msg) }
-		if (c.file) {
-			appendFileSync(c.file, msg + "\n")
-		}
+		if (c.file) { appendFileSync(c.file, msg + '\n') }
 	}
 }
 
@@ -40,17 +43,16 @@ export default Self
 
 if (isMain(import.meta.url)) {
 	(async () => {
-		const Test = (await import('./test.js')).default
-		const t = new Test()
 		const log = new Self({
 			stdout: true,
-//      stderr: true,
-//      file: '~/test.log',
+			trace: true,
+//			stderr: true,
+//			file: '~/test.log',
 		})
 		log.debug('DEBUG')
 		log.info('INFO')
 		log.warn('WARN')
-		log.error('ERROR', 'MSG')
+		log.error('ERROR', 'MSG', new Error('ANY ERROR'))
 		log.fatal('FATAL')
 	})()
 }
