@@ -11,6 +11,7 @@ class DB {
 			user: 'root',
 			password: '',
 			database: '',
+			dateStrings: true,
 		}, conf)
 		this.conf = conf
 	}
