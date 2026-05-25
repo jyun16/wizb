@@ -1,14 +1,17 @@
-import { d } from 'wiz'
-
 import Model from '../model.js'
 
 export default class {
 	uintMax() {
 		return 4294967295
 	}
+	priorityWhere(data) {
+		return {}
+	}
+	async nextPriority(data) {
+		return ((await this.one(this.priorityWhere(data), ':MAX(priority) AS priority')).priority ?? 0) + 1
+	}
 	async insert(data) {
-		data.priority = (await this.one({}, ':MAX(priority) AS priority'))['priority'] ?? 0
-		data.priority++
+		if (data.priority == null) data.priority = await this.nextPriority(data)
 		return this.as(Model, 'insert', data)
 	}
 	async select(where = {}, fields = '*', filter = []) {
@@ -16,11 +19,11 @@ export default class {
 		return this.as(Model, 'select', where, fields, filter)
 	}
 	async maxPriority() {
-		return (await this.one({ priority: [ '!=', this.uintMax() ] }, ':MAX(priority) AS priority'))['priority']
+		return (await this.one({ priority: [ '!=', this.uintMax() ] }, ':MAX(priority) AS priority')).priority
 	}
 	async orderUp(id) {
 		const curPriority = await this.value('priority', { id })
-		if (curPriority == 1) { return }
+		if (curPriority == 1) return
 		const prevPriority = curPriority - 1
 		await this.update({ priority: curPriority }, { priority: prevPriority })
 		await this.update({ priority: prevPriority }, { id })
@@ -28,7 +31,7 @@ export default class {
 	async orderDown(id) {
 		const curPriority = await this.value('priority', { id })
 		const maxPriority = await this.maxPriority()
-		if (curPriority == maxPriority) { return }
+		if (curPriority == maxPriority) return
 		const nextPriority = curPriority + 1
 		await this.update({ priority: curPriority }, { priority: nextPriority })
 		await this.update({ priority: nextPriority }, { id })
@@ -40,12 +43,12 @@ export default class {
 		if (!f || !t || f == t) return
 		const op = f > t ? 'priority + 1' : 'priority - 1'
 		const c1 = f > t ? (after ? '>' : '>=') : (after ? '<=' : '<')
-		await this.update({ priority: ['raw', op] }, { '-and': ['priority', [c1, t], 'priority', [f > t ? '<' : '>', f]] })
+		await this.update({ priority: [ 'raw', op ] }, { '-and': [ 'priority', [ c1, t ], 'priority', [ f > t ? '<' : '>', f ] ] })
 		await this.update({ priority: f > t ? (after ? t + 1 : t) : (after ? t : t - 1) }, { id: from })
 	}
 	async remove(id) {
 		const curPriority = await this.value('priority', { id })
-		await this.update({ priority: [ 'raw', 'priority - 1' ] }, { 'id': [ '>', curPriority ] })
+		await this.update({ priority: [ 'raw', 'priority - 1' ] }, { priority: [ '>', curPriority ] })
 		await this.update({ priority: this.uintMax() }, { id })
 		await this.delete({ id })
 	}
