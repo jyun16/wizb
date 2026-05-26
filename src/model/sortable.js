@@ -15,8 +15,12 @@ export default class {
 		return this.as(Model, 'insert', data)
 	}
 	async select(where = {}, fields = '*', filter = []) {
-		where['-order'] = 'priority'
+		if (!where['-order']) { where['-order'] = 'priority' }
 		return this.as(Model, 'select', where, fields, filter)
+	}
+	async findPage(lw, w) {
+		if (!lw['-order']) { lw['-order'] = 'priority' }
+		return this.as(Model, 'findPage', lw, w)
 	}
 	async maxPriority() {
 		return (await this.one({ priority: [ '!=', this.uintMax() ] }, ':MAX(priority) AS priority')).priority
