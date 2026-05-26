@@ -1,4 +1,4 @@
-import { dd, isString, deepClone, split, objMerge, arrayConcat } from 'wiz'
+import { dd, isString, clone, split, objMerge, arrayConcat } from 'wiz'
 import { isMain } from './index.js'
 import Query from './db/query.js'
 import * as SQL from './db/sql.js'
@@ -29,7 +29,7 @@ async
 		return (this.logicalDelete ? [ 'deleted' ] : []).concat([ 'created', 'modified' ])
 	}
 	where(w) {
-		w = deepClone(w)
+		w = clone(w)
 		if (this.logicalDelete && !w['-force']) w.deleted = [ 'isNull' ]
 		if (this._join) w['-join'] = this._join
 		if (this._alias) w['-alias'] = this._alias
@@ -41,7 +41,7 @@ async
 	_count(w={}, fields='*') {
 		const q = new Query()
 		w = this.where(w)
-		q.count(this.selfName(), deepClone(w), fields)
+		q.count(this.selfName(), clone(w), fields)
 		return q
 	}
 	async count(w={}, fields='*') {
@@ -200,7 +200,7 @@ async
 	}
 	async findPage(listWhere, w) {
 		const q = new Query()
-		listWhere = deepClone(listWhere)
+		listWhere = clone(listWhere)
 		if (this.logicalDelete && !listWhere['-force']) {
 			listWhere['deleted'] = [ 'isNull' ]
 		}
@@ -215,7 +215,7 @@ async
 		return this.get(id)
 	}
 	pagerData(limit, count, page, w) {
-		w = deepClone(w)
+		w = clone(w)
 		const maxPage = Math.ceil(count / limit) || 1
 		let curPage = page || 1
 		if (maxPage < curPage) { curPage = maxPage }

@@ -1,4 +1,4 @@
-import { isEmpty, deepClone, objSet, hash, json, parseJSON } from 'wiz'
+import { isEmpty, clone, objSet, hash, json, parseJSON } from 'wiz'
 import { isMain } from '../index.js'
 import Model from '../model.js'
 
@@ -12,7 +12,7 @@ class Self extends Model {
 		return [ 'password' ].concat(super.ignoreFields())
 	}
 	async insert(d) {
-		d = deepClone(d)
+		d = clone(d)
 		const chk = await this.uniqCheck(d)
 		if (chk) { return chk }
 		if (d.password) { d.password = this.genPassword(d.password) }
