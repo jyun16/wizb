@@ -1,4 +1,5 @@
-import { isEmpty, clone, objSet, hash, json, parseJSON } from 'wiz'
+import argon2 from 'argon2'
+import { dd, isEmpty, clone, objSet } from 'wiz'
 import { isMain } from '../index.js'
 import Model from '../model.js'
 
@@ -13,50 +14,45 @@ class Self extends Model {
 	}
 	async insert(d) {
 		d = clone(d)
-		const chk = await this.uniqCheck(d)
-		if (chk) { return chk }
-		if (d.password) { d.password = this.genPassword(d.password) }
+		if (d.password) { d.password = await this.hashPassword(d.password) }
 		d.stash = json(d.stash || {})
 		return super.insert(d)
 	}
 	async update(d, w) {
-		if (d.password) { d.password = this.genPassword(d.password) }
+		if (d.password) { d.password = await this.hashPassword(d.password) }
 		return super.update(d, w)
 	}
-	async uniqCheck(d) {
-		const ret = {}
-		if (await this.exists({ userid: d.userid })) {
-			objSet(ret, 'errors.userid', 'ユーザーIDが既に存在します')
-		}
-		if (this.emailField && await this.exists({ email: d.email })) {
-			objSet(ret, 'errors.email', 'メールアドレスが既に存在します')
-		}
-		return isEmpty(ret) ? null : ret
+	hashPassword(pw) {
+		return argon2.hash(pw, {
+			type: argon2.argon2id,
+			memoryCost: 65536,
+			timeCost: 3,
+			parallelism: 1,
+		})
 	}
-	genPassword(pw) {
-		return hash(pw)
-	}
-	chkPassword(hashPW, pw) {
-		return hash(pw) == hashPW
+	verifyPassword(hash, password) {
+		return argon2.verify(hash, password)
 	}
 	async loginData(w) {
 		const d = await this.one(w)
-		if (d) {
-			for (const field of this.ignoreFields()) {
-				delete d[field]
-			}
-		}
+		if (!d) return null
+		for (const field of this.ignoreFields()) delete d[field]
 		return d
 	}
-	async login(userid, pw, _hash = false) {
-		const password = await super.value('password', { userid })
-		if (password && (this.chkPassword(password, pw) || (_hash && password == pw))) {
-			return this.onePrune({ userid })
+	async login(userid, password) {
+		const pw = await super.value('password', { userid })
+		if (!pw) return null
+		if (pw && (await this.verifyPassword(pw, password))) {
+			const ret = await this.onePrune({ userid })
+			if (ret.stash) ret.stash = JSON.parse(ret.stash)
+			return ret
 		}
-		else {
-			return null
-		}
+		return null
 	}
 }
 
 export default Self
+
+if (isMain(import.meta.url)) {
+
+}
