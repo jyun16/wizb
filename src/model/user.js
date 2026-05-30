@@ -15,7 +15,7 @@ class Self extends Model {
 	async insert(d) {
 		d = clone(d)
 		if (d.password) { d.password = await this.hashPassword(d.password) }
-		d.stash = json(d.stash || {})
+		d.stash = JSON.stringify(d.stash || {})
 		return super.insert(d)
 	}
 	async update(d, w) {
@@ -24,7 +24,6 @@ class Self extends Model {
 	}
 	hashPassword(pw) {
 		return argon2.hash(pw, {
-			type: argon2.argon2id,
 			memoryCost: 65536,
 			timeCost: 3,
 			parallelism: 1,
